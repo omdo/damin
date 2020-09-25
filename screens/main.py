@@ -73,6 +73,19 @@ class FrontLayer(RecycleView):
 				for x in range(100)
 			]
 
+	def remove_data(self, num):
+		removed = None
+		for data in self.data:
+			if data['num'] == num:
+				removed = data
+				break
+
+		if removed == None:
+			return print(num, 'not found ?')
+
+		self.data.remove(removed)
+		self.data = sorted(self.data, key=lambda x: x['num'])
+
 class BackLayer(RecycleView):
 	rw = ObjectProperty()
 
@@ -114,52 +127,58 @@ class MainScreen(Screen):
 			return print('FIX ME!! #REFRESH')
 		self.manager.switch_to(screen)
 
-	def option_callback(self, btn, item):
-		self.dialog.dismiss()
-		if btn._text == 'Edit':
-			print(item, 'Edited')
-			print('FIX ME!!')
-		elif btn._text == 'Remove':
-			self.open_remove_dialog(item)
 
-	def remove_callback(self, btn):
+	def remove_callback(self, btn, num):
 		self.remove_dialog.dismiss()
 		if btn.text == 'OK':
-			index = None
-			self.ids.front_layer.data = sorted(self.ids.front_layer.data, key=lambda k: k['num'])
-			for i in range(len(self.ids.front_layer.data)):
-				if self.remove_dialog.item.num == self.ids.front_layer.data[i]['num']:
-					index = i
-					break
-			if index is not None:
-				self.ids.front_layer.data.pop(index)
-				return
+			self.ids.front_layer.remove_data(num)
+			return
 		self.dialog.open()
 
-	def open_remove_dialog(self, item):
+	def open_remove_dialog(self, num):
 		if not hasattr(self, 'remove_dialog'):
 			self.remove_dialog = MDDialog(
 				auto_dismiss=False,
 				text='This item will be deleted, continue?',
 				buttons=[
-					MDFlatButton(text='Cancel', on_release=self.remove_callback),
-					MDFlatButton(text='OK', on_release=self.remove_callback, text_color=[1, 0, 0, 1])
+					MDFlatButton(text='Cancel'),
+					MDFlatButton(text='OK', text_color=[1, 0, 0, 1])
 				]
 			)
-		self.remove_dialog.item = item
+		for button in self.remove_dialog.buttons:
+			if not hasattr(button, 'last_bound'):
+				button.last_bound = None
+			if button.last_bound != None:
+				button.unbind_uid('on_release', button.last_bound)
+			button.last_bound = button.fbind('on_release', lambda x: self.remove_callback(x, num))
 		self.remove_dialog.open()
 
+	def option_callback(self, btn, num):
+		self.dialog.dismiss()
+		if btn._text == 'Edit':
+			print(btn, 'Edited')
+			print('FIX ME!!')
+		elif btn._text == 'Remove':
+			self.open_remove_dialog(num)
+
 	def front_callback(self, item):
+		num = int(item.num)
 		if not hasattr(self, 'dialog'):
 			self.dialog = MDDialog(
 				auto_dismiss=False,
 				type='simple',
 				items=[
-					DialogOption(_text='Edit', on_release=lambda x: self.option_callback(x, item)),
-					DialogOption(_text='Remove', text_color=[1, 0, 0, 1], on_release=lambda x: self.option_callback(x, item)),
-					DialogOption(_text='Cancel', divider=None, on_release=lambda x: self.option_callback(x, item)),
+					DialogOption(_text='Edit'),
+					DialogOption(_text='Remove', text_color=[1, 0, 0, 1]),
+					DialogOption(_text='Cancel', divider=None),
 				]
 			)
+		for option in self.dialog.items:
+			if not hasattr(option, 'last_bound'):
+				option.last_bound = None
+			if option.last_bound != None:
+				option.unbind_uid('on_release', option.last_bound)
+			option.last_bound = option.fbind('on_release', lambda x: self.option_callback(x, num))
 		self.dialog.open()
 
 	def back_callback(self, item):
