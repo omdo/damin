@@ -6,6 +6,21 @@ from kivy.core.window import Window
 from kivy.clock import Clock
 from screens import Screens
 from functools import partial
+from kivy.utils import platform
+
+if platform == 'android':
+	from jnius import autoclass, cast
+	from android.runnable import run_on_ui_thread
+	Toast = autoclass('android.widget.Toast')
+	activity = autoclass('org.kivy.android.PythonActivity').mActivity
+	AndroidString = autoclass('java.lang.String')
+	@run_on_ui_thread
+	def toast(message):
+		Toast.makeText(
+			activity,
+			cast('java.lang.CharSequence', AndroidString(message)),
+			Toast.LENGTH_SHORT
+		).show()
 
 KV = '''
 #:import FadeTransition kivy.uix.screenmanager.FadeTransition
@@ -54,7 +69,10 @@ class DaminApp(MDApp):
 			return False
 		self.is_exit = True
 		Clock.schedule_once(lambda delta: setattr(self, 'is_exit', False), 1.5)
-		print('press again to exit')
+		if platform == 'android':
+			toast('Press again to exit')
+		else:
+			print('Press again to exit')
 		return True
 
 	def build(self):

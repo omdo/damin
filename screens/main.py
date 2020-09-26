@@ -1,21 +1,17 @@
 from kivy.uix.screenmanager import Screen
 from kivy.lang import Builder
 from kivy.properties import ListProperty, StringProperty, ObjectProperty, NumericProperty, BooleanProperty
-from mods.backdrop import MDBackdropFrontLayer
-from kivy.uix.recycleview import RecycleView
-from mods.list import CustomOneLineListItem, SelectableListItem
+from mods.dialog import CustomDialog, DialogOption
 from kivymd.uix.dialog import MDDialog
-from kivymd.uix.list import OneLineIconListItem
 from kivymd.uix.button import MDFlatButton
 from kivy.clock import Clock
 from kivy.animation import Animation
-from kivymd.uix.button import MDFloatingActionButton
 
 Builder.load_string('''
 #:import CustomBackdrop mods.backdrop.CustomBackdrop
-#:import ScrollEffect kivy.effects.scroll.ScrollEffect
 #:import CustomFAB mods.button.CustomFAB
-
+#:import FrontLayer mods.layer.FrontLayer
+#:import BackLayer mods.layer.BackLayer
 <MainScreen>:
 	CustomBackdrop:
 		id: backdrop
@@ -40,99 +36,7 @@ Builder.load_string('''
 		md_bg_color: app.theme_cls.primary_color
 		pos: root.width - self.width - dp(25), dp(25)
 		on_release: root.fab_callback(self)
-
-<FrontLayer>:
-	viewclass: 'CustomOneLineListItem'
-	effect_cls: ScrollEffect
-	RecycleBoxLayout:
-		id: box
-		padding: 10
-		spacing: 8
-		default_size: None, dp(56)
-        default_size_hint: 1, None
-        size_hint_y: None
-        height: self.minimum_height
-        orientation: 'vertical'
-
-<BackLayer>:
-	viewclass: 'SelectableListItem'
-	RecycleBoxLayout:
-		id: box
-		padding: 10
-		default_size: None, dp(56)
-        default_size_hint: 1, None
-        size_hint_y: None
-        height: self.minimum_height
-        orientation: 'vertical'
-
-<DialogOption>:
-	MDLabel:
-		text: root._text
-		theme_text_color: root.theme_text_color
-		text_color: root.text_color
-		pos_hint: {'center_x': .5, 'center_y': .5}
-		halign: 'center'
-		valign: 'middle'
 ''')
-class FrontLayer(RecycleView):
-	rw = ObjectProperty()
-
-	def on_rw(self, inst, value):
-		def oo(i):
-			self.data = self.rw.template_data
-		self.data = []
-		Clock.schedule_once(oo, .2)
-
-	def remove_data(self, num):
-		removed = None
-		for data in self.data:
-			if data['num'] == num:
-				removed = data
-				break
-
-		if removed == None:
-			return print(num, 'not found ?')
-
-		self.data.remove(removed)
-		self.data = sorted(self.data, key=lambda x: x['num'])
-
-		if self.rw.template_data != self.data:
-			self.rw.template_data = self.data
-
-class BackLayer(RecycleView):
-	rw = ObjectProperty()
-
-	def on_rw(self, inst, value):
-		if value:
-			templates = ['Program', 'Tamu', 'Keuangan', 'Rapat', 'Kerja']
-			self.data = [
-				{
-					'text': f'Buku {templates[i]}',
-					'template': templates[i],
-					'num': i+1,
-					'callback': self.rw.back_callback,
-				}
-				for i in range(len(templates))
-			]
-
-			data = self.data
-			for i in range(len(data)):
-				data[i]['template_data'] = [
-					{
-						'text': f"{data[i]['text']} Item {x}",
-						'num': x+1,
-						'callback': self.rw.front_callback,
-					}
-					for x in range(100)
-				]
-
-			self.data = data
-
-class DialogOption(OneLineIconListItem):
-	divider = StringProperty('Full', allownone=True)
-	theme_text_color = 'Custom'
-	_text = StringProperty()
-
 class MainScreen(Screen):
 	right_menu = ListProperty()
 	current_template = StringProperty()
@@ -185,6 +89,7 @@ class MainScreen(Screen):
 		if not hasattr(self, 'remove_dialog'):
 			self.remove_dialog = MDDialog(
 				auto_dismiss=False,
+				radius=[20, 20, 20, 20],
 				text='This item will be deleted, continue?',
 				buttons=[
 					MDFlatButton(text='Cancel'),
@@ -210,7 +115,7 @@ class MainScreen(Screen):
 	def front_callback(self, item):
 		num = int(item.num)
 		if not hasattr(self, 'dialog'):
-			self.dialog = MDDialog(
+			self.dialog = CustomDialog(
 				auto_dismiss=False,
 				type='simple',
 				items=[
