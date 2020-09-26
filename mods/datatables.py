@@ -43,8 +43,8 @@ Builder.load_string(
         Rectangle:
             pos: self.pos
             size: self.size
-    on_press: if DEVICE_TYPE != "desktop": root.table.on_mouse_select(self)
-    on_enter: if DEVICE_TYPE == "desktop": root.table.on_mouse_select(self)
+    # on_press: if DEVICE_TYPE != "desktop": root.table.on_mouse_select(self)
+    # on_enter: if DEVICE_TYPE == "desktop": root.table.on_mouse_select(self)
 
     MDBoxLayout:
         id: box
@@ -71,7 +71,7 @@ Builder.load_string(
     size_hint_y: None
     height: self.minimum_height
     spacing: "4dp"
-    tooltip_text: root.text
+    # tooltip_text: root.text
 
     MDLabel:
         text: " " + root.text
@@ -204,7 +204,7 @@ Builder.load_string(
         orientation: "vertical"
         elevation: root.elevation
         md_bg_color: 0, 0, 0, 0
-        padding: "24dp", "24dp", "8dp", "8dp"
+        padding: "8dp", "8dp", "8dp", "8dp"
 
         canvas:
             Color:
@@ -482,7 +482,7 @@ class TableData(RecycleView):
     def set_default_first_row(self, dt):
         """Set default first row as selected."""
 
-        self.ids.row_controller.select_next(self)
+        # self.ids.row_controller.select_next(self)
 
     def sort_by_name(self):
         """Sorts table data."""

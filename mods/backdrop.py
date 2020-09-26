@@ -152,7 +152,7 @@ class CustomBackdrop(ThemableBehavior, FloatLayout):
         if open_up_to:
             y = open_up_to
         else:
-            y = dp(110) - self.height
+            y = dp(100) - self.height
         Animation(y=y, d=0.2, t="out_quad").start(self.ids._front_layer)
         self._front_layer_open = True
         self.dispatch("on_open")

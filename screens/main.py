@@ -80,9 +80,9 @@ class MainScreen(Screen):
 		Animation(scroll_y=1, d=.5, t='out_cubic').start(self.ids.front_layer)
 
 	def menu_callback(self, btn):
-		if btn.icon == self.right_menu[1][0]:
+		if btn.icon == 'account-circle':
 			screen = self.manager.app.screens.account
-		elif btn.icon == self.right_menu[2][0]:
+		elif btn.icon == 'alert-circle':
 			screen = self.manager.app.screens.about
 		else:
 			render_screen = self.manager.app.screens.render

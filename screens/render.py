@@ -1,6 +1,6 @@
 from kivy.lang import Builder
 from kivy.uix.screenmanager import Screen
-from kivymd.uix.datatables import MDDataTable
+from mods.datatables import CustomDataTable
 from kivy.properties import ObjectProperty, ListProperty
 from kivy.metrics import dp
 from kivy.clock import Clock
@@ -34,10 +34,8 @@ class RenderScreen(Screen):
                 row.append(v)
             rows.append(tuple(row))
 
-        self.data_tables = MDDataTable(
+        self.data_tables = CustomDataTable(
             auto_dismiss=False,
-            background='',
-            background_color=[0, 0, 0, 0],
             overlay_color=[0, 0, 0, 0],
             size_hint_y=(Window.height - self.ids.tb.height) / Window.height,
             pos_hint={'top': (Window.height - self.ids.tb.height) / Window.height},
@@ -48,7 +46,7 @@ class RenderScreen(Screen):
 
     def on_enter(self):
         def pre_enter(i):
-            self.data_tables = MDDataTable(
+            self.data_tables = CustomDataTable(
                 rows_num=50,
                 column_data=[
                     ("No.", dp(30)),
