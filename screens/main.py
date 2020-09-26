@@ -14,6 +14,8 @@ from kivymd.uix.button import MDFloatingActionButton
 Builder.load_string('''
 #:import CustomBackdrop mods.backdrop.CustomBackdrop
 #:import ScrollEffect kivy.effects.scroll.ScrollEffect
+#:import CustomFAB mods.button.CustomFAB
+
 <MainScreen>:
 	CustomBackdrop:
 		id: backdrop
@@ -35,11 +37,8 @@ Builder.load_string('''
 				id: front_layer
 	CustomFAB:
 		id: fab
-		icon: 'arrow-up'
 		md_bg_color: app.theme_cls.primary_color
 		pos: root.width - self.width - dp(25), dp(25)
-		elevation: 10
-		elevation_normal: 10
 		on_release: root.fab_callback(self)
 
 <FrontLayer>:
@@ -129,16 +128,6 @@ class BackLayer(RecycleView):
 
 			self.data = data
 
-class CustomFAB(MDFloatingActionButton):
-	is_showing = BooleanProperty()
-
-	def on_is_showing(self, inst, value):
-		if not hasattr(self, 'orig_y'):
-			self.orig_y = self.y
-		y = self.orig_y if value else 0 - self.height
-		Animation(y=y, d=.2, t='out_cubic').start(self)
-
-
 class DialogOption(OneLineIconListItem):
 	divider = StringProperty('Full', allownone=True)
 	theme_text_color = 'Custom'
@@ -159,10 +148,8 @@ class MainScreen(Screen):
 		self.ids.front_layer.bind(scroll_y=self.on_front_scroll)
 
 	def on_front_open(self, value):
-		if not hasattr(self.ids.fab, 'orig_is_showing'):
-			self.ids.fab.orig_is_showing = self.ids.fab.is_showing
-
-		self.ids.fab.is_showing = self.ids.fab.orig_is_showing if not value else False
+		opacity = 0 if value else 1
+		Animation(opacity=opacity, d=.2, t='out_cubic').start(self.ids.fab)
 
 	def on_front_scroll(self, inst, value):
 		if value < .98:
