@@ -14,13 +14,6 @@ if platform == 'android':
 	Toast = autoclass('android.widget.Toast')
 	activity = autoclass('org.kivy.android.PythonActivity').mActivity
 	AndroidString = autoclass('java.lang.String')
-	@run_on_ui_thread
-	def toast(message):
-		Toast.makeText(
-			activity,
-			cast('java.lang.CharSequence', AndroidString(message)),
-			Toast.LENGTH_SHORT
-		).show()
 
 KV = '''
 #:import FadeTransition kivy.uix.screenmanager.FadeTransition
@@ -45,9 +38,12 @@ class CustomScreenManager(ScreenManager):
 
 	def back(self):
 		if self.last:
+			if self.current_screen == self.app.screens.render:
+				self.current_screen.data_tables.dismiss()	
 			self.switch_to(self.last)
 			return True
-		return self.app.trigger_exit()
+		else:
+			return self.app.trigger_exit()
 
 class DaminApp(MDApp):
 	def __init__(self, **kwargs):
@@ -69,11 +65,22 @@ class DaminApp(MDApp):
 			return False
 		self.is_exit = True
 		Clock.schedule_once(lambda delta: setattr(self, 'is_exit', False), 1.5)
-		if platform == 'android':
-			toast('Press again to exit')
-		else:
-			print('Press again to exit')
+		self.toast('Press again to exit')
 		return True
+
+	def toast(self, message):
+		if platform == 'android':
+			@run_on_ui_thread
+			def _toast(message):
+				Toast.makeText(
+					activity,
+					cast('java.lang.CharSequence', AndroidString(message)),
+					Toast.LENGTH_SHORT
+				).show()
+			return _toast(message)
+
+		else:
+			print(message)
 
 	def build(self):
 		self.theme_cls.primary_palette = 'Teal'

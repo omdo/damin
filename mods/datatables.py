@@ -202,7 +202,7 @@ Builder.load_string(
     MDCard:
         id: container
         orientation: "vertical"
-        elevation: 14
+        elevation: root.elevation
         md_bg_color: 0, 0, 0, 0
         padding: "24dp", "24dp", "8dp", "8dp"
 
@@ -692,7 +692,7 @@ class CustomDataTable(BaseDialog):
 
         Example().run()
     """
-
+    elevation = NumericProperty(14)
     column_data = ListProperty()
     """
     Data for header columns.

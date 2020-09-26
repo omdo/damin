@@ -52,7 +52,7 @@ Builder.load_string('''
 class Lefty(MDBoxLayout, ILeftBodyTouch):
 	pass
 
-class CustomOneLineListItem(OneLineIconListItem, RectangularElevationBehavior, TouchBehavior):
+class CustomOneLineListItem(OneLineIconListItem, RectangularElevationBehavior):
 	callback = ObjectProperty()
 	num = NumericProperty()
 	with_icon = BooleanProperty(True)

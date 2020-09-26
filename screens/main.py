@@ -16,12 +16,12 @@ Builder.load_string('''
 	CustomBackdrop:
 		id: backdrop
 		right_action_items: root.right_menu
-		header_text: root.current_template + ':' if root.current_template else 'Select Template'
+		header_text: 'Buku ' + root.current_template.template + ':' if root.current_template else 'Select Template'
 		on_open:
-			self.header_text = f'Data {root.current_template}:' if root.current_template else 'Select Template'
+			self.header_text = ''
 			root.on_front_open(True)
 		on_close:
-			self.header_text = root.current_template + ':' if root.current_template else 'Select Template'
+			self.header_text = 'Buku ' + root.current_template.template + ':' if root.current_template else 'No template selected, pick one.'
 			root.on_front_open(False)
 		MDBackdropBackLayer:
 			BackLayer:
@@ -39,17 +39,28 @@ Builder.load_string('''
 ''')
 class MainScreen(Screen):
 	right_menu = ListProperty()
-	current_template = StringProperty()
+	current_template = ObjectProperty()
 	backdrop_elevation = NumericProperty(0)
 
 	def __init__(self, **kwargs):
 		super().__init__(**kwargs)
 		self.right_menu = [
-			['refresh-circle', lambda x: self.menu_callback(x)],
 			['account-circle', lambda x: self.menu_callback(x)],
 			['alert-circle', lambda x: self.menu_callback(x)]
 		]
 		self.ids.front_layer.bind(scroll_y=self.on_front_scroll)
+
+	def on_current_template(self, inst, value):
+		if value:
+			if 'refresh-circle' in [x[0] for x in self.right_menu]:
+				return
+			btn = ['refresh-circle', lambda x: self.menu_callback(x)]
+			self.right_menu.insert(0, btn)
+		else:
+			if 'refresh-circle' in [x[0] for x in self.right_menu]:
+				for menu in self.right_menu:
+					if menu[0] == 'refresh-circle':
+						self.right_menu.remove(menu)
 
 	def on_front_open(self, value):
 		opacity = 0 if value else 1
@@ -74,7 +85,18 @@ class MainScreen(Screen):
 		elif btn.icon == self.right_menu[2][0]:
 			screen = self.manager.app.screens.about
 		else:
-			return print('FIX ME!! #REFRESH')
+			render_screen = self.manager.app.screens.render
+			render_screen.data = [
+				{
+					'No': x,
+					'Nama': 'Fajar',
+					'Nama2': 'Jiwandono',
+					'Alamat': 'Mawar1',
+					'Pekerjaan': 'santuy'
+				}
+				for x in range(1, 21)
+			]
+			return self.manager.switch_to(render_screen)
 		self.manager.switch_to(screen)
 
 
@@ -134,7 +156,7 @@ class MainScreen(Screen):
 
 	def back_callback(self, item):
 		def after_open(i):
-			self.current_template = item.template
+			self.current_template = item
 			self.ids.front_layer.rw = item
 		self.ids.backdrop.open()
 		Clock.schedule_once(after_open, .1)

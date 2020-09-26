@@ -18,7 +18,7 @@ from kivymd.uix.toolbar import MDToolbar
 Builder.load_string(
     """
 <CustomBackdrop>
-
+    header_size: header_button.height
     canvas:
         Color:
             rgba:
@@ -31,7 +31,7 @@ Builder.load_string(
     MDBackdropToolbar:
         id: toolbar
         title: root.title
-        elevation: 10
+        elevation: 0
         md_bg_color:
             root.theme_cls.primary_color if not root.background_color \
             else root.background_color
@@ -42,7 +42,7 @@ Builder.load_string(
     _BackLayer:
         id: back_layer
         y: -toolbar.height
-        padding: 0, 0, 0, toolbar.height + dp(10)
+        padding: dp(20), 0, dp(20), toolbar.height + dp(10)
 
     _FrontLayer:
         id: _front_layer
@@ -68,14 +68,22 @@ Builder.load_string(
 
         OneLineListItem:
             id: header_button
-            text: root.header_text
-            divider: None
+            # text: root.header_text
+            # divider: 'Inset'
             _no_ripple_effect: True
             on_press: root.open()
+            MDLabel:
+                text: root.header_text
+                # theme_text_color: 'Custom'
+                # text_color: app.theme_cls.primary_dark
+                halign: 'left'
+                valign: 'middle'
+                pos_hint: {'center_y': .5}
+                x: root.radius
 
         BoxLayout:
             id: front_layer
-            padding: 0, 0, 0, "10dp"
+            padding: 0, "1dp", 0, 0
 """
 )
 
@@ -109,7 +117,7 @@ class CustomBackdrop(ThemableBehavior, FloatLayout):
             self.ids.toolbar.hardy = self.ids.toolbar._hard_shadow_a
         soft = self.ids.toolbar.softy if value else 0
         hard = self.ids.toolbar.hardy if value else 0
-        Animation(_soft_shadow_a=soft, _hard_shadow_a=hard, d=.5, t='out_quad').start(self.ids.toolbar)
+        # Animation(_soft_shadow_a=soft, _hard_shadow_a=hard, d=.5, t='out_quad').start(self.ids.toolbar)
 
     def on_open(self):
         """When the front layer drops."""
