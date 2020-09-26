@@ -1,20 +1,30 @@
 from kivy.uix.screenmanager import Screen
 from kivy.lang import Builder
-from kivy.properties import ListProperty, StringProperty, ObjectProperty, NumericProperty
+from kivy.properties import ListProperty, StringProperty, ObjectProperty, NumericProperty, BooleanProperty
 from mods.backdrop import MDBackdropFrontLayer
 from kivy.uix.recycleview import RecycleView
 from mods.list import CustomOneLineListItem, SelectableListItem
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.list import OneLineIconListItem
 from kivymd.uix.button import MDFlatButton
+from kivy.clock import Clock
+from kivy.animation import Animation
+from kivymd.uix.button import MDFloatingActionButton
 
 Builder.load_string('''
 #:import CustomBackdrop mods.backdrop.CustomBackdrop
+#:import ScrollEffect kivy.effects.scroll.ScrollEffect
 <MainScreen>:
 	CustomBackdrop:
 		id: backdrop
 		right_action_items: root.right_menu
-		header_text: root.current_template
+		header_text: root.current_template + ':' if root.current_template else 'Select Template'
+		on_open:
+			self.header_text = f'Data {root.current_template}:' if root.current_template else 'Select Template'
+			root.on_front_open(True)
+		on_close:
+			self.header_text = root.current_template + ':' if root.current_template else 'Select Template'
+			root.on_front_open(False)
 		MDBackdropBackLayer:
 			BackLayer:
 				id: back_layer
@@ -23,10 +33,18 @@ Builder.load_string('''
 			md_bg_color: .5, .5, .5, 1
 			FrontLayer:
 				id: front_layer
-				rw: root
+	CustomFAB:
+		id: fab
+		icon: 'arrow-up'
+		md_bg_color: app.theme_cls.primary_color
+		pos: root.width - self.width - dp(25), dp(25)
+		elevation: 10
+		elevation_normal: 10
+		on_release: root.fab_callback(self)
 
 <FrontLayer>:
 	viewclass: 'CustomOneLineListItem'
+	effect_cls: ScrollEffect
 	RecycleBoxLayout:
 		id: box
 		padding: 10
@@ -59,19 +77,12 @@ Builder.load_string('''
 ''')
 class FrontLayer(RecycleView):
 	rw = ObjectProperty()
-	
+
 	def on_rw(self, inst, value):
-		if value:
-			self.data = [
-				{
-					'text': f'List Item {x+1}',
-					'num': x+1,
-					'callback': self.rw.front_callback,
-					'divider': None,
-					'bg_color': [1, 1, 1, 1]
-				}
-				for x in range(100)
-			]
+		def oo(i):
+			self.data = self.rw.template_data
+		self.data = []
+		Clock.schedule_once(oo, .2)
 
 	def remove_data(self, num):
 		removed = None
@@ -86,6 +97,9 @@ class FrontLayer(RecycleView):
 		self.data.remove(removed)
 		self.data = sorted(self.data, key=lambda x: x['num'])
 
+		if self.rw.template_data != self.data:
+			self.rw.template_data = self.data
+
 class BackLayer(RecycleView):
 	rw = ObjectProperty()
 
@@ -95,11 +109,35 @@ class BackLayer(RecycleView):
 			self.data = [
 				{
 					'text': f'Buku {templates[i]}',
-					'num': 1,
+					'template': templates[i],
+					'num': i+1,
 					'callback': self.rw.back_callback,
 				}
 				for i in range(len(templates))
 			]
+
+			data = self.data
+			for i in range(len(data)):
+				data[i]['template_data'] = [
+					{
+						'text': f"{data[i]['text']} Item {x}",
+						'num': x+1,
+						'callback': self.rw.front_callback,
+					}
+					for x in range(100)
+				]
+
+			self.data = data
+
+class CustomFAB(MDFloatingActionButton):
+	is_showing = BooleanProperty()
+
+	def on_is_showing(self, inst, value):
+		if not hasattr(self, 'orig_y'):
+			self.orig_y = self.y
+		y = self.orig_y if value else 0 - self.height
+		Animation(y=y, d=.2, t='out_cubic').start(self)
+
 
 class DialogOption(OneLineIconListItem):
 	divider = StringProperty('Full', allownone=True)
@@ -108,7 +146,8 @@ class DialogOption(OneLineIconListItem):
 
 class MainScreen(Screen):
 	right_menu = ListProperty()
-	current_template = StringProperty('None')
+	current_template = StringProperty()
+	backdrop_elevation = NumericProperty(0)
 
 	def __init__(self, **kwargs):
 		super().__init__(**kwargs)
@@ -117,6 +156,26 @@ class MainScreen(Screen):
 			['account-circle', lambda x: self.menu_callback(x)],
 			['alert-circle', lambda x: self.menu_callback(x)]
 		]
+		self.ids.front_layer.bind(scroll_y=self.on_front_scroll)
+
+	def on_front_open(self, value):
+		if not hasattr(self.ids.fab, 'orig_is_showing'):
+			self.ids.fab.orig_is_showing = self.ids.fab.is_showing
+
+		self.ids.fab.is_showing = self.ids.fab.orig_is_showing if not value else False
+
+	def on_front_scroll(self, inst, value):
+		if value < .98:
+			if self.ids.fab.is_showing:
+				return
+			self.ids.fab.is_showing = True
+		else:
+			if not self.ids.fab.is_showing:
+				return
+			self.ids.fab.is_showing = False
+
+	def fab_callback(self, fab):
+		Animation(scroll_y=1, d=.5, t='out_cubic').start(self.ids.front_layer)
 
 	def menu_callback(self, btn):
 		if btn.icon == self.right_menu[1][0]:
@@ -182,4 +241,20 @@ class MainScreen(Screen):
 		self.dialog.open()
 
 	def back_callback(self, item):
-		print(item.text, 'selected')
+		def after_open(i):
+			self.current_template = item.template
+			self.ids.front_layer.rw = item
+		self.ids.backdrop.open()
+		Clock.schedule_once(after_open, .1)
+
+	def on_pre_enter(self):
+		self.ids.fab.is_showing = False
+
+	def on_enter(self):
+		def enter(i):
+			if self.ids.backdrop._front_layer_open:
+				self.ids.backdrop.open()
+				return
+			if not self.current_template:
+				self.ids.backdrop.open()
+		Clock.schedule_once(enter, .2)

@@ -31,7 +31,7 @@ Builder.load_string(
     MDBackdropToolbar:
         id: toolbar
         title: root.title
-        elevation: 0
+        elevation: 10
         md_bg_color:
             root.theme_cls.primary_color if not root.background_color \
             else root.background_color
@@ -81,83 +81,18 @@ Builder.load_string(
 
 
 class CustomBackdrop(ThemableBehavior, FloatLayout):
-    """
-    :Events:
-        :attr:`on_open`
-            When the front layer drops.
-        :attr:`on_close`
-            When the front layer rises.
-    """
-
     padding = ListProperty([0, 0, 0, 0])
-    """Padding for contents of the front layer.
-
-    :attr:`padding` is an :class:`~kivy.properties.ListProperty`
-    and defaults to `[0, 0, 0, 0]`.
-    """
-
     left_action_items = ListProperty()
-    """The icons and methods left of the :class:`kivymd.uix.toolbar.MDToolbar`
-    in back layer. For more information, see the :class:`kivymd.uix.toolbar.MDToolbar` module
-    and :attr:`left_action_items` parameter.
-
-    :attr:`left_action_items` is an :class:`~kivy.properties.ListProperty`
-    and defaults to `[]`.
-    """
-
     right_action_items = ListProperty()
-    """Works the same way as :attr:`left_action_items`.
-
-    :attr:`right_action_items` is an :class:`~kivy.properties.ListProperty`
-    and defaults to `[]`.
-    """
-
     title = StringProperty()
-    """See the :class:`kivymd.uix.toolbar.MDToolbar.title` parameter.
-
-    :attr:`title` is an :class:`~kivy.properties.StringProperty`
-    and defaults to `''`.
-    """
-
     background_color = ListProperty()
-    """Background color of back layer.
-
-    :attr:`background_color` is an :class:`~kivy.properties.ListProperty`
-    and defaults to `[]`.
-    """
-
     radius = NumericProperty(25)
-    """The value of the rounding radius of the upper left corner
-    of the front layer.
-
-    :attr:`radius` is an :class:`~kivy.properties.NumericProperty`
-    and defaults to `25`.
-    """
-
     header = BooleanProperty(True)
-    """Whether to use a header above the contents of the front layer.
-
-    :attr:`header` is an :class:`~kivy.properties.BooleanProperty`
-    and defaults to `True`.
-    """
-
     header_text = StringProperty("Header")
-    """Text of header.
-
-    :attr:`header_text` is an :class:`~kivy.properties.StringProperty`
-    and defaults to `'Header'`.
-    """
-
     close_icon = StringProperty("close")
-    """The name of the icon that will be installed on the toolbar
-    on the left when opening the front layer.
-
-    :attr:`close_icon` is an :class:`~kivy.properties.StringProperty`
-    and defaults to `'close'`.
-    """
-
     _open_icon = ""
-    _front_layer_open = False
+    _front_layer_open = BooleanProperty(False)
+    _header_text = 'Template Items:'
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -166,6 +101,15 @@ class CustomBackdrop(ThemableBehavior, FloatLayout):
         Clock.schedule_once(
             lambda x: self.on_left_action_items(self, self.left_action_items)
         )
+
+    def on__front_layer_open(self, inst, value):
+        if not hasattr(self.ids.toolbar, 'softy'):
+            self.ids.toolbar.softy = self.ids.toolbar._soft_shadow_a
+        if not hasattr(self.ids.toolbar, 'hardy'):
+            self.ids.toolbar.hardy = self.ids.toolbar._hard_shadow_a
+        soft = self.ids.toolbar.softy if value else 0
+        hard = self.ids.toolbar.hardy if value else 0
+        Animation(_soft_shadow_a=soft, _hard_shadow_a=hard, d=.5, t='out_quad').start(self.ids.toolbar)
 
     def on_open(self):
         """When the front layer drops."""

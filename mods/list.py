@@ -4,7 +4,7 @@ from kivymd.uix.list import OneLineIconListItem, ILeftBodyTouch
 from kivymd.uix.behaviors import RectangularElevationBehavior, TouchBehavior
 from kivymd.theming import ThemableBehavior
 from kivy.lang import Builder
-from kivy.properties import ObjectProperty, NumericProperty, BooleanProperty, StringProperty
+from kivy.properties import ObjectProperty, NumericProperty, BooleanProperty, StringProperty, ListProperty
 from kivy.core.window import Window
 
 Builder.load_string('''
@@ -32,7 +32,8 @@ Builder.load_string('''
     canvas:
         Color:
             rgba:
-                root.theme_cls.primary_dark if root.selected_item \
+                # root.theme_cls.primary_dark
+                [1, 1, 1, .2] if root.selected_item \
                 else root.theme_cls.primary_color
         RoundedRectangle:
             pos: self.pos
@@ -55,7 +56,9 @@ class CustomOneLineListItem(OneLineIconListItem, RectangularElevationBehavior, T
 	callback = ObjectProperty()
 	num = NumericProperty()
 	with_icon = BooleanProperty(True)
-
+	bg_color = [1, 1, 1, 1]
+	divider = None
+	
 	def on_release(self):
 		self.callback(self)
 
@@ -64,6 +67,7 @@ class SelectableListItem(ThemableBehavior, BoxLayout):
     text = StringProperty()
     selected_item = BooleanProperty(False)
     callback = ObjectProperty(None, allownone=True)
+    template_data = ListProperty()
 
     def on_touch_down(self, touch):
         if self.collide_point(touch.x, touch.y):
@@ -74,6 +78,6 @@ class SelectableListItem(ThemableBehavior, BoxLayout):
         return super().on_touch_down(touch)
 
     def on_selected_item(self, instance, value):
-    	if self.callback:
-    		if value:
-    			self.callback(self)
+        if value:
+            if self.callback:
+                self.callback(self)
